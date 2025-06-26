@@ -26,7 +26,7 @@ The Patent Filing Assistant is a tool designed to help users transform their inn
 
 ```bash
 git clone <repository-url>
-cd patent-filing-assistant
+cd autonomous-ip-assistant
 ```
 
 2. Create and activate a virtual environment:
