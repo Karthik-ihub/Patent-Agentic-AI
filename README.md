@@ -21,7 +21,7 @@ The Patent Filing Assistant is a tool designed to help users transform their inn
 - FAISS and Sentence Transformers for prior art search
 
 ## Architecture
-![Alt Text]()
+![Alt Text](Agentic_ai.drawio.png)
 
 
 ### Installation
