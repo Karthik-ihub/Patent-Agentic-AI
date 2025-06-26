@@ -84,7 +84,7 @@ cd frontend
 2. Start the development server:
 
 ```bash
-npm start
+npm run dev
 ```
 
 ### Accessing the Application
