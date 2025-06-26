@@ -20,6 +20,10 @@ The Patent Filing Assistant is a tool designed to help users transform their inn
 - Google API Key for Gemini integration
 - FAISS and Sentence Transformers for prior art search
 
+## Architecture
+![Alt Text]()
+
+
 ### Installation
 
 1. Clone the repository:
