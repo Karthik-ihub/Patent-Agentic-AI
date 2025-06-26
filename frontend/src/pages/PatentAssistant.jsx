@@ -1,11 +1,38 @@
 import { useState } from "react";
 import axios from "axios";
 
-// ResultCard component
-const ResultCard = ({ title, content }) => (
-  <div className="result-card">
-    <h3 className="result-title">{title}</h3>
-    <div className="result-content">{content}</div>
+// ResultCard component for chat-style messages
+const ResultCard = ({ title, content, isEven }) => (
+  <div className={`chat-message ${isEven ? 'chat-right' : 'chat-left'}`}>
+    <div className="avatar-container">
+      <svg
+        width="40"
+        height="40"
+        viewBox="0 0 24 24"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        className="robot-avatar"
+      >
+        <defs>
+          <linearGradient id="robotGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style={{ stopColor: '#667eea', stopOpacity: 1 }} />
+            <stop offset="100%" style={{ stopColor: '#764ba2', stopOpacity: 1 }} />
+          </linearGradient>
+        </defs>
+        <rect x="7" y="5" width="10" height="8" rx="2" fill="url(#robotGradient)" />
+        <rect x="9" y="2" width="6" height="3" rx="1" fill="url(#robotGradient)" />
+        <circle cx="10" cy="10" r="1" fill="#ffffff" />
+        <circle cx="14" cy="10" r="1" fill="#ffffff" />
+        <path d="M10 14L14 14" stroke="#ffffff" strokeWidth="1" strokeLinecap="round" />
+        <rect x="8" y="16" width="8" height="4" rx="1" fill="url(#robotGradient)" />
+        <path d="M10 18L10 20" stroke="#ffffff" strokeWidth="1" strokeLinecap="round" />
+        <path d="M14 18L14 20" stroke="#ffffff" strokeWidth="1" strokeLinecap="round" />
+      </svg>
+    </div>
+    <div className="message-content">
+      <h3 className="result-title">{title}</h3>
+      <div className="result-content">{content}</div>
+    </div>
   </div>
 );
 
@@ -29,7 +56,6 @@ function PatentAssistant() {
         await new Promise((resolve) => setTimeout(resolve, 1200));
         setStepResults((prev) => [...prev, steps[i]]);
       }
-
     } catch (err) {
       setError("Something went wrong. Please try again.");
       console.error(err);
@@ -42,6 +68,15 @@ function PatentAssistant() {
   const formatTitle = (slug) => {
     return slug.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
   };
+
+  // Agent names for display
+  const agentNames = [
+    "Innovation Extractor Agent",
+    "Prior Art Research Agent",
+    "Claim Generator Agent",
+    "Draft Writer Agent",
+    "Patent Filing Agent",
+  ];
 
   return (
     <>
@@ -65,7 +100,7 @@ function PatentAssistant() {
 
         .container {
           width: 100%;
-          max-width: 900px;
+          max-width: 1200px;
           min-height: 100vh;
           padding: 2rem;
           display: flex;
@@ -76,6 +111,7 @@ function PatentAssistant() {
           background: rgba(255, 255, 255, 0.9);
           border-radius: 20px;
           box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+          margin: 0 auto;
         }
 
         .container::before {
@@ -140,6 +176,8 @@ function PatentAssistant() {
             0 0 0 1px rgba(255, 255, 255, 0.2);
           animation: slideUp 0.8s ease-out 0.2s both;
           border: 1px solid rgba(255, 255, 255, 0.2);
+          width: 100%;
+          box-sizing: border-box;
         }
 
         .input-label {
@@ -160,6 +198,7 @@ function PatentAssistant() {
           font-family: inherit;
           resize: vertical;
           background: rgba(248, 250, 252, 0.8);
+          color: #2d3748;
           transition: all 0.3s ease;
           outline: none;
         }
@@ -172,7 +211,7 @@ function PatentAssistant() {
         }
 
         .idea-textarea::placeholder {
-          color: #a0aec0;
+          color: #718096;
         }
 
         .submit-button {
@@ -269,38 +308,68 @@ function PatentAssistant() {
           backdrop-filter: blur(10px);
         }
 
-        .results-section {
+        .chat-container {
           width: 100%;
           margin-top: 2rem;
+          display: flex;
+          flex-direction: column;
+          gap: 1.5rem;
+          box-sizing: border-box;
         }
 
-        .result-card {
-          background: rgba(255, 255, 255, 0.95);
-          backdrop-filter: blur(20px);
-          border-radius: 20px;
-          padding: 2rem;
-          margin-bottom: 1.5rem;
-          box-shadow:
-            0 10px 30px rgba(0, 0, 0, 0.08),
-            0 0 0 1px rgba(255, 255, 255, 0.2);
-          transition: all 0.3s ease;
+        .chat-message {
+          display: flex;
+          align-items: flex-start;
+          max-width: 80%;
+          gap: 1rem;
+          animation: slideIn 0.6s ease-out both;
+        }
+
+        .chat-left {
+          align-self: flex-start;
+          flex-direction: row;
           animation: slideInLeft 0.6s ease-out both;
-          border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
-        .result-card:hover {
-          transform: translateY(-5px);
-          box-shadow:
-            0 20px 40px rgba(0, 0, 0, 0.12),
-            0 0 0 1px rgba(255, 255, 255, 0.3);
-        }
-
-        .result-card:nth-child(even) {
+        .chat-right {
+          align-self: flex-end;
+          flex-direction: row-reverse;
           animation: slideInRight 0.6s ease-out both;
         }
 
+        .avatar-container {
+          flex-shrink: 0;
+        }
+
+        .robot-avatar {
+          transition: transform 0.3s ease;
+        }
+
+        .robot-avatar:hover {
+          transform: scale(1.1);
+        }
+
+        .message-content {
+          background: rgba(255, 255, 255, 0.95);
+          backdrop-filter: blur(20px);
+          border-radius: 16px;
+          padding: 1.5rem;
+          box-shadow:
+            0 10px 20px rgba(0, 0, 0, 0.08),
+            0 0 0 1px rgba(255, 255, 255, 0.2);
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          transition: all 0.3s ease;
+        }
+
+        .message-content:hover {
+          transform: translateY(-3px);
+          box-shadow:
+            0 15px 30px rgba(0, 0, 0, 0.1),
+            0 0 0 1px rgba(255, 255, 255, 0.3);
+        }
+
         .result-title {
-          font-size: 1.3rem;
+          font-size: 1.2rem;
           font-weight: 700;
           color: #2d3748;
           margin-bottom: 1rem;
@@ -363,6 +432,17 @@ function PatentAssistant() {
           }
         }
 
+        @keyframes slideIn {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
         /* Responsive Design */
         @media (max-width: 768px) {
           .container {
@@ -382,9 +462,12 @@ function PatentAssistant() {
             border-radius: 16px;
           }
 
-          .result-card {
-            padding: 1.5rem;
-            border-radius: 16px;
+          .chat-message {
+            max-width: 90%;
+          }
+
+          .message-content {
+            padding: 1.2rem;
           }
 
           .submit-button {
@@ -402,8 +485,12 @@ function PatentAssistant() {
             padding: 1.2rem;
           }
 
-          .result-card {
-            padding: 1.2rem;
+          .chat-message {
+            max-width: 95%;
+          }
+
+          .message-content {
+            padding: 1rem;
           }
         }
       `}</style>
@@ -443,18 +530,20 @@ function PatentAssistant() {
           </div>
 
           {stepResults.length > 0 && (
-            <div className="results-section">
+            <div className="chat-container">
               {stepResults.map((step, index) => {
                 const agentKey = Object.keys(step)[0];
                 const contentObj = step[agentKey];
                 const contentKey = Object.keys(contentObj)[0];
                 const contentValue = contentObj[contentKey];
+                const agentName = agentNames[index] || formatTitle(agentKey);
 
                 return (
                   <ResultCard
                     key={index}
-                    title={`${formatTitle(agentKey)} → ${formatTitle(contentKey)}`}
+                    title={`${agentName} → ${formatTitle(contentKey)}`}
                     content={contentValue}
+                    isEven={index % 2 === 1}
                   />
                 );
               })}

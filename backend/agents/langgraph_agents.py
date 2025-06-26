@@ -16,7 +16,7 @@ class AgentState(TypedDict):
 
 # Agent 1: Extract technical claims
 def innovation_extractor(state: AgentState) -> AgentState:
-    prompt = f"""You are an AI patent analyst. Extract key technical claims from this innovation idea:\n\n"{state['idea']}"\n\nList the claims clearly."""
+    prompt = f"""You are an AI patent analyst. Extract key technical claims from this innovation idea:\n\n"{state['idea']}"\n\nList the claims clearly. PLease always remove "**" and unwanted symbols  in your contentpls."""
     return {"claims": ask_gemini(prompt)}
 
 # Agent 2: Search prior art using RAGfrom .gemini_call import ask_gemini
@@ -49,6 +49,7 @@ Please do the following:
 2. For each matched entry, summarize what it is and how it overlaps with the user's idea.
 3. Ignore irrelevant entries.
 4. Format your response as a bullet list of matches with explanation.
+5. Avoid any special characters or formatting such as ** or #.
 """
 
     filtered_prior_art = ask_gemini(prompt)
@@ -58,7 +59,7 @@ Please do the following:
 
 # Agent 3: Generate legal claims
 def claim_generator(state: AgentState) -> AgentState:
-    prompt = f"""Based on the following extracted claims:\n\n{state['claims']}\n\nAnd the following prior art:\n\n{state['prior_art']}\n\nGenerate a structured, legally sound set of patent claims."""
+    prompt = f"""Based on the following extracted claims:\n\n{state['claims']}\n\nAnd the following prior art:\n\n{state['prior_art']}\n\nGenerate a structured, legally sound set of patent claims.Pleasealso Avoid any special characters or formatting such as ** or #. You can use Bullet points if needed."""
     return {"structured_claims": ask_gemini(prompt)}
 
 # Agent 4: Draft full patent
@@ -84,7 +85,7 @@ __________
 Textual Description of Diagrams (optional): 
 __________
 
-Ensure that each section is clearly labeled and formatted in a neat manner, making it suitable for pre-filing and PDF generation. Avoid any special characters or formatting such as ** or #.
+Ensure that each section is clearly labeled and formatted in a neat manner, making it suitable for pre-filing and PDF generation. Avoid any special characters or formatting such as ** or # in your content pls.
 Based on these structured claims:
 
 {state['structured_claims']}
