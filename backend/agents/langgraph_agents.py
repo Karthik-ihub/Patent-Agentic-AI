@@ -1,9 +1,23 @@
 import os
 from langgraph.graph import StateGraph, END
 from typing import TypedDict
-
+from pymongo import MongoClient
+import datetime
+import os
+from .pdf_utils import create_patent_pdf
 from .gemini_call import ask_gemini
 from .rag_utils import search_similar_patents
+
+from pymongo.errors import ConfigurationError, ConnectionFailure
+MONGODB_URI="mongodb+srv://PKDB:PKDB@cluster0.xf7j3ez.mongodb.net/"
+try:
+    client = MongoClient(MONGODB_URI)
+    client.server_info()  # Force connection on a request as a test
+    db = client["patent_system"]
+    filings_collection = db["filings"]
+except (ConfigurationError, ConnectionFailure) as e:
+    print(f"MongoDB Connection Error: {e}")
+    filings_collection = None  # Avoid crashing the app
 
 # Agent memory state structure
 class AgentState(TypedDict):
@@ -82,8 +96,6 @@ Detailed Description:
 __________  
 Claims: 
 __________  
-Textual Description of Diagrams (optional): 
-__________
 
 Ensure that each section is clearly labeled and formatted in a neat manner, making it suitable for pre-filing and PDF generation. Avoid any special characters or formatting such as ** or # in your content pls.
 Based on these structured claims:
@@ -99,27 +111,31 @@ from .pdf_utils import create_patent_pdf
 
 def patent_filer(state: AgentState) -> AgentState:
     draft = state['draft']
-    
+
     # Step 1: Create PDF
     pdf_path = create_patent_pdf(draft, filename="patent_preview.pdf")
 
-    # Step 2: Mock filing metadata
+    # Step 2: Generate Filing Metadata
     filing_id = "FAKE" + os.urandom(4).hex().upper()
     filing_info = {
         "filing_id": filing_id,
         "status": "submitted",
         "timestamp": datetime.datetime.now().isoformat(),
-        "pdf_path": pdf_path
+        "pdf_path": pdf_path,
+        "idea": state.get("idea", ""),
+        "claims": state.get("claims", ""),
+        "prior_art": state.get("prior_art", ""),
+        "structured_claims": state.get("structured_claims", ""),
+        "draft": draft
     }
 
-    with open("filing_history.json", "a") as f:
-        json.dump(filing_info, f)
-        f.write("\n")
+    # Step 3: Insert into MongoDB
+    filings_collection.insert_one(filing_info)
 
     return {
         "filing_status": "Patent submitted successfully to mock system ✅",
         "filing_id": filing_id,
-        "pdf_path": pdf_path  # Optional: You can serve it in frontend
+        "pdf_path": pdf_path
     }
 
 

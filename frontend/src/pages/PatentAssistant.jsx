@@ -1,38 +1,84 @@
-import { useState } from "react";
-import axios from "axios";
+import { useState, useEffect, useRef } from "react";
+import { Lightbulb, Zap, FileText, Search, CheckCircle, Sparkles, Brain, Shield, Rocket } from "lucide-react";
 
-// ResultCard component for chat-style messages
-const ResultCard = ({ title, content, isEven }) => (
-  <div className={`chat-message ${isEven ? 'chat-right' : 'chat-left'}`}>
-    <div className="avatar-container">
-      <svg
-        width="40"
-        height="40"
-        viewBox="0 0 24 24"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-        className="robot-avatar"
-      >
-        <defs>
-          <linearGradient id="robotGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" style={{ stopColor: '#667eea', stopOpacity: 1 }} />
-            <stop offset="100%" style={{ stopColor: '#764ba2', stopOpacity: 1 }} />
-          </linearGradient>
-        </defs>
-        <rect x="7" y="5" width="10" height="8" rx="2" fill="url(#robotGradient)" />
-        <rect x="9" y="2" width="6" height="3" rx="1" fill="url(#robotGradient)" />
-        <circle cx="10" cy="10" r="1" fill="#ffffff" />
-        <circle cx="14" cy="10" r="1" fill="#ffffff" />
-        <path d="M10 14L14 14" stroke="#ffffff" strokeWidth="1" strokeLinecap="round" />
-        <rect x="8" y="16" width="8" height="4" rx="1" fill="url(#robotGradient)" />
-        <path d="M10 18L10 20" stroke="#ffffff" strokeWidth="1" strokeLinecap="round" />
-        <path d="M14 18L14 20" stroke="#ffffff" strokeWidth="1" strokeLinecap="round" />
-      </svg>
+// Particle component for floating animation
+const Particle = ({ delay = 0 }) => (
+  <div
+    className="particle"
+    style={{
+      animationDelay: `${delay}s`,
+      left: `${Math.random() * 100}%`,
+      animationDuration: `${8 + Math.random() * 4}s`
+    }}
+  />
+);
+
+// Typing animation component
+const TypingAnimation = ({ text, speed = 20 }) => {
+  const [displayedText, setDisplayedText] = useState("");
+  const index = useRef(0);
+
+  useEffect(() => {
+    const typingInterval = setInterval(() => {
+      if (index.current < text.length) {
+        setDisplayedText(prev => prev + text.charAt(index.current));
+        index.current += 1;
+      } else {
+        clearInterval(typingInterval);
+      }
+    }, speed);
+
+    return () => {
+      clearInterval(typingInterval);
+      index.current = 0;
+    };
+  }, [text, speed]);
+
+  return <div className="typing-content">{displayedText}</div>;
+};
+
+// CenteredResponseCard component for displaying responses
+const CenteredResponseCard = ({ title, content }) => {
+  return (
+    <div className="centered-response-card">
+      <div className="response-header">
+        <h3 className="response-title">{title}</h3>
+      </div>
+      <div className="response-content">
+        <TypingAnimation text={content} />
+      </div>
     </div>
-    <div className="message-content">
-      <h3 className="result-title">{title}</h3>
-      <div className="result-content">{content}</div>
+  );
+};
+
+// WhyChooseUsCard component for animated cards
+const WhyChooseUsCard = ({ title, description, icon }) => {
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsVisible(true), 100);
+    return () => clearTimeout(timer);
+  }, []);
+
+  return (
+    <div className={`why-choose-us-card ${isVisible ? 'visible' : ''}`}>
+      <div className="card-border-glow"></div>
+      <div className="card-icon">{icon}</div>
+      <div className="card-content">
+        <h3 className="card-title">{title}</h3>
+        <p className="card-description">{description}</p>
+      </div>
     </div>
+  );
+};
+
+// Progress indicator component
+const ProgressStep = ({ step, isActive, isCompleted, icon }) => (
+  <div className={`progress-step ${isActive ? 'active' : ''} ${isCompleted ? 'completed' : ''}`}>
+    <div className="step-icon">
+      {icon}
+    </div>
+    <span className="step-label">{step}</span>
   </div>
 );
 
@@ -41,41 +87,87 @@ function PatentAssistant() {
   const [stepResults, setStepResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [currentStep, setCurrentStep] = useState(0);
+
+  const steps = [
+    { name: "Analyzing Innovation", icon: <Brain className="w-5 h-5" /> },
+    { name: "Researching Prior Art", icon: <Search className="w-5 h-5" /> },
+    { name: "Generating Claims", icon: <Zap className="w-5 h-5" /> },
+    { name: "Drafting Application", icon: <FileText className="w-5 h-5" /> },
+    { name: "Preparing Filing", icon: <Rocket className="w-5 h-5" /> }
+  ];
 
   const handleSubmit = async () => {
     setLoading(true);
     setError("");
     setStepResults([]);
+    setCurrentStep(0);
 
     try {
-      // Actual API call
-      const response = await axios.post("http://localhost:8000/api/run-agent/", { idea });
-      const steps = response.data.steps;
+      // Actual API call to your backend
+      const response = await fetch("http://localhost:8000/api/run-agent/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ idea }),
+      });
 
-      for (let i = 0; i < steps.length; i++) {
-        await new Promise((resolve) => setTimeout(resolve, 1200));
-        setStepResults((prev) => [...prev, steps[i]]);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
+
+      const data = await response.json();
+      const steps = data.steps;
+
+      // Filter results to only include Draft Writer Agent and Patent Filing Agent
+      const filteredSteps = steps.filter((step, index) =>
+        index === 3 || index === 4 // Draft Writer Agent (index 3) and Patent Filing Agent (index 4)
+      );
+
+      // Display filtered results
+      for (let i = 0; i < filteredSteps.length; i++) {
+        setCurrentStep(steps.indexOf(filteredSteps[i]) + 1);
+        await new Promise((resolve) => setTimeout(resolve, 1200));
+        setStepResults((prev) => [...prev, filteredSteps[i]]);
+      }
+      setCurrentStep(steps.length);
     } catch (err) {
-      setError("Something went wrong. Please try again.");
-      console.error(err);
+      setError("Failed to connect to the backend. Please ensure the server is running and try again.");
+      console.error("API Error:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  // Helper to prettify field names
   const formatTitle = (slug) => {
     return slug.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
   };
 
-  // Agent names for display
   const agentNames = [
     "Innovation Extractor Agent",
     "Prior Art Research Agent",
     "Claim Generator Agent",
     "Draft Writer Agent",
     "Patent Filing Agent",
+  ];
+
+  const whyChooseUsData = [
+    {
+      title: "AI-Powered Analysis",
+      description: "Our advanced AI algorithms analyze your innovation to provide the best patent strategy.",
+      icon: <Brain className="w-6 h-6" />
+    },
+    {
+      title: "Prior Art Research",
+      description: "We conduct thorough research to ensure your innovation is unique and patentable.",
+      icon: <Search className="w-6 h-6" />
+    },
+    {
+      title: "Instant Claims Generation",
+      description: "Our AI generates patent claims instantly, saving you time and effort.",
+      icon: <Zap className="w-6 h-6" />
+    }
   ];
 
   return (
@@ -88,146 +180,258 @@ function PatentAssistant() {
         }
 
         body {
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+          background: #0a0e1a;
           min-height: 100vh;
-          color: #333;
+          color: #ffffff;
+          margin: 0;
+          padding: 0;
           display: flex;
           justify-content: center;
           align-items: center;
-          padding: 20px;
+          overflow-x: hidden;
         }
 
         .container {
-          width: 100%;
-          max-width: 1200px;
+          position: relative;
           min-height: 100vh;
+          width: 100vw;
           padding: 2rem;
           display: flex;
-          flex-direction: column;
+          justify-content: center;
           align-items: center;
-          position: relative;
-          overflow-x: hidden;
-          background: rgba(255, 255, 255, 0.9);
-          border-radius: 20px;
-          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-          margin: 0 auto;
+          background:
+            radial-gradient(circle at 20% 20%, rgba(59, 130, 246, 0.15) 0%, transparent 50%),
+            radial-gradient(circle at 80% 80%, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
+            radial-gradient(circle at 40% 60%, rgba(16, 185, 129, 0.1) 0%, transparent 50%);
+          box-sizing: border-box;
         }
 
-        .container::before {
-          content: '';
-          position: absolute;
+        .particles-bg {
+          position: fixed;
           top: 0;
           left: 0;
-          right: 0;
-          bottom: 0;
-          background:
-            radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
-            radial-gradient(circle at 80% 20%, rgba(255, 118, 117, 0.3) 0%, transparent 50%),
-            radial-gradient(circle at 40% 80%, rgba(255, 204, 112, 0.3) 0%, transparent 50%);
-          animation: float 20s ease-in-out infinite;
-          border-radius: 20px;
+          width: 100%;
+          height: 100%;
+          pointer-events: none;
+          z-index: 0;
         }
 
-        @keyframes float {
-          0%, 100% { transform: translateY(0px) rotate(0deg); }
-          33% { transform: translateY(-20px) rotate(1deg); }
-          66% { transform: translateY(10px) rotate(-1deg); }
+        .particle {
+          position: absolute;
+          width: 3px;
+          height: 3px;
+          background: linear-gradient(45deg, #3b82f6, #8b5cf6);
+          border-radius: 50%;
+          animation: float-particle linear infinite;
+          opacity: 0.7;
+        }
+
+        @keyframes float-particle {
+          0% {
+            transform: translateY(100vh) rotate(0deg);
+            opacity: 0;
+          }
+          10% {
+            opacity: 0.7;
+          }
+          90% {
+            opacity: 0.7;
+          }
+          100% {
+            transform: translateY(-100px) rotate(360deg);
+            opacity: 0;
+          }
         }
 
         .main-content {
           position: relative;
           z-index: 1;
+          max-width: 1200px;
           width: 100%;
+          margin: 0 auto;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .input-section,
+        .progress-container,
+        .chat-container {
+          width: 100%;
+          max-width: 100%;
+          margin: 0 auto;
         }
 
         .header {
           text-align: center;
-          margin-bottom: 3rem;
-          animation: slideDown 0.8s ease-out;
+          margin-bottom: 4rem;
+          animation: fadeInUp 1s ease-out;
+        }
+
+        .title-container {
+          position: relative;
+          display: inline-block;
         }
 
         .title {
-          font-size: 3.5rem;
-          font-weight: 800;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          font-size: 4rem;
+          font-weight: 900;
+          background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #10b981 100%);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
-          margin-bottom: 0.5rem;
-          text-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+          margin-bottom: 1rem;
+          line-height: 1.1;
+          position: relative;
+          animation: textGlow 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes textGlow {
+          0% {
+            filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.5));
+          }
+          100% {
+            filter: drop-shadow(0 0 20px rgba(139, 92, 246, 0.8));
+          }
+        }
+
+        .title::before {
+          content: '';
+          position: absolute;
+          top: -10px;
+          left: -10px;
+          right: -10px;
+          bottom: -10px;
+          background: linear-gradient(135deg, #3b82f6, #8b5cf6, #10b981);
+          border-radius: 20px;
+          filter: blur(20px);
+          opacity: 0.3;
+          z-index: -1;
+          animation: pulse-glow 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-glow {
+          0%, 100% { opacity: 0.3; transform: scale(1); }
+          50% { opacity: 0.5; transform: scale(1.05); }
         }
 
         .subtitle {
-          font-size: 1.2rem;
-          color: #4a5568;
-          font-weight: 300;
+          font-size: 1.3rem;
+          color: #94a3b8;
+          font-weight: 400;
           letter-spacing: 0.5px;
+          margin-bottom: 2rem;
+        }
+
+        .feature-badges {
+          display: flex;
+          justify-content: center;
+          gap: 1rem;
+          flex-wrap: wrap;
+          margin-top: 2rem;
+        }
+
+        .badge {
+          background: rgba(59, 130, 246, 0.1);
+          border: 1px solid rgba(59, 130, 246, 0.3);
+          padding: 0.5rem 1rem;
+          border-radius: 50px;
+          font-size: 0.9rem;
+          color: #3b82f6;
+          backdrop-filter: blur(10px);
+          animation: float 3s ease-in-out infinite;
+        }
+
+        .badge:nth-child(2) { animation-delay: 0.5s; }
+        .badge:nth-child(3) { animation-delay: 1s; }
+
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-5px); }
         }
 
         .input-section {
-          background: rgba(255, 255, 255, 0.95);
+          background: rgba(15, 23, 42, 0.8);
           backdrop-filter: blur(20px);
+          border: 1px solid rgba(59, 130, 246, 0.2);
           border-radius: 24px;
-          padding: 2.5rem;
-          margin-bottom: 2rem;
-          box-shadow:
-            0 20px 40px rgba(0, 0, 0, 0.1),
-            0 0 0 1px rgba(255, 255, 255, 0.2);
+          padding: 3rem;
+          margin-bottom: 3rem;
+          position: relative;
+          overflow: hidden;
           animation: slideUp 0.8s ease-out 0.2s both;
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          width: 100%;
-          box-sizing: border-box;
+        }
+
+        .input-section::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 1px;
+          background: linear-gradient(90deg, transparent, #3b82f6, transparent);
+          animation: shimmer 2s ease-in-out infinite;
+        }
+
+        @keyframes shimmer {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(100%); }
         }
 
         .input-label {
-          display: block;
-          font-size: 1.1rem;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          font-size: 1.2rem;
           font-weight: 600;
-          color: #4a5568;
-          margin-bottom: 1rem;
+          color: #e2e8f0;
+          margin-bottom: 1.5rem;
         }
 
         .idea-textarea {
           width: 100%;
-          min-height: 120px;
+          min-height: 150px;
           padding: 1.5rem;
-          border: 2px solid rgba(102, 126, 234, 0.1);
+          background: rgba(30, 41, 59, 0.5);
+          border: 2px solid rgba(59, 130, 246, 0.2);
           border-radius: 16px;
           font-size: 1rem;
           font-family: inherit;
+          color: #e2e8f0;
           resize: vertical;
-          background: rgba(248, 250, 252, 0.8);
-          color: #2d3748;
           transition: all 0.3s ease;
           outline: none;
         }
 
         .idea-textarea:focus {
-          border-color: #667eea;
-          background: rgba(255, 255, 255, 0.95);
-          box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+          border-color: #3b82f6;
+          background: rgba(30, 41, 59, 0.8);
+          box-shadow:
+            0 0 0 4px rgba(59, 130, 246, 0.1),
+            0 0 20px rgba(59, 130, 246, 0.2);
           transform: translateY(-2px);
         }
 
         .idea-textarea::placeholder {
-          color: #718096;
+          color: #64748b;
         }
 
         .submit-button {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
           color: white;
           border: none;
-          padding: 1rem 2.5rem;
+          padding: 1.2rem 3rem;
           font-size: 1.1rem;
           font-weight: 600;
           border-radius: 50px;
           cursor: pointer;
           transition: all 0.3s ease;
-          margin-top: 1.5rem;
-          box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+          margin-top: 2rem;
           position: relative;
           overflow: hidden;
+          box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3);
         }
 
         .submit-button::before {
@@ -238,7 +442,7 @@ function PatentAssistant() {
           width: 100%;
           height: 100%;
           background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-          transition: left 0.5s ease;
+          transition: left 0.6s ease;
         }
 
         .submit-button:hover::before {
@@ -247,7 +451,7 @@ function PatentAssistant() {
 
         .submit-button:hover {
           transform: translateY(-3px);
-          box-shadow: 0 15px 35px rgba(102, 126, 234, 0.4);
+          box-shadow: 0 15px 40px rgba(59, 130, 246, 0.4);
         }
 
         .submit-button:active {
@@ -255,151 +459,244 @@ function PatentAssistant() {
         }
 
         .submit-button:disabled {
-          opacity: 0.7;
+          opacity: 0.6;
           cursor: not-allowed;
           transform: none;
         }
 
-        .status-section {
-          text-align: center;
+        .progress-container {
+          background: rgba(15, 23, 42, 0.8);
+          backdrop-filter: blur(20px);
+          border: 1px solid rgba(59, 130, 246, 0.2);
+          border-radius: 20px;
+          padding: 2rem;
           margin: 2rem 0;
+          display: ${loading ? 'block' : 'none'};
         }
 
-        .loading {
-          display: inline-flex;
+        .progress-steps {
+          display: flex;
+          justify-content: space-between;
           align-items: center;
-          gap: 0.5rem;
-          color: #4a5568;
-          font-size: 1.1rem;
-          font-weight: 500;
-          background: rgba(255, 255, 255, 0.9);
-          padding: 1rem 2rem;
-          border-radius: 50px;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-          animation: pulse 2s ease-in-out infinite;
+          margin-bottom: 2rem;
+          position: relative;
         }
 
-        .loading-spinner {
-          width: 20px;
-          height: 20px;
-          border: 2px solid rgba(102, 126, 234, 0.3);
-          border-top: 2px solid #667eea;
-          border-radius: 50%;
-          animation: spin 1s linear infinite;
+        .progress-steps::before {
+          content: '';
+          position: absolute;
+          top: 20px;
+          left: 0;
+          right: 0;
+          height: 2px;
+          background: rgba(59, 130, 246, 0.2);
+          z-index: 0;
         }
 
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.7; }
-        }
-
-        .error {
-          color: #e53e3e;
-          background: rgba(254, 226, 226, 0.9);
-          padding: 1rem 2rem;
-          border-radius: 12px;
-          font-weight: 500;
-          border-left: 4px solid #e53e3e;
-          backdrop-filter: blur(10px);
-        }
-
-        .chat-container {
-          width: 100%;
-          margin-top: 2rem;
+        .progress-step {
           display: flex;
           flex-direction: column;
-          gap: 1.5rem;
-          box-sizing: border-box;
+          align-items: center;
+          gap: 0.5rem;
+          position: relative;
+          z-index: 1;
         }
 
-        .chat-message {
+        .step-icon {
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          background: rgba(30, 41, 59, 0.8);
+          border: 2px solid rgba(59, 130, 246, 0.3);
           display: flex;
-          align-items: flex-start;
-          max-width: 80%;
-          gap: 1rem;
-          animation: slideIn 0.6s ease-out both;
-        }
-
-        .chat-left {
-          align-self: flex-start;
-          flex-direction: row;
-          animation: slideInLeft 0.6s ease-out both;
-        }
-
-        .chat-right {
-          align-self: flex-end;
-          flex-direction: row-reverse;
-          animation: slideInRight 0.6s ease-out both;
-        }
-
-        .avatar-container {
-          flex-shrink: 0;
-        }
-
-        .robot-avatar {
-          transition: transform 0.3s ease;
-        }
-
-        .robot-avatar:hover {
-          transform: scale(1.1);
-        }
-
-        .message-content {
-          background: rgba(255, 255, 255, 0.95);
-          backdrop-filter: blur(20px);
-          border-radius: 16px;
-          padding: 1.5rem;
-          box-shadow:
-            0 10px 20px rgba(0, 0, 0, 0.08),
-            0 0 0 1px rgba(255, 255, 255, 0.2);
-          border: 1px solid rgba(255, 255, 255, 0.2);
+          align-items: center;
+          justify-content: center;
+          color: #64748b;
           transition: all 0.3s ease;
         }
 
-        .message-content:hover {
-          transform: translateY(-3px);
-          box-shadow:
-            0 15px 30px rgba(0, 0, 0, 0.1),
-            0 0 0 1px rgba(255, 255, 255, 0.3);
+        .progress-step.active .step-icon {
+          background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+          border-color: #3b82f6;
+          color: white;
+          animation: pulse-step 2s ease-in-out infinite;
         }
 
-        .result-title {
-          font-size: 1.2rem;
-          font-weight: 700;
-          color: #2d3748;
+        .progress-step.completed .step-icon {
+          background: linear-gradient(135deg, #10b981, #3b82f6);
+          border-color: #10b981;
+          color: white;
+        }
+
+        @keyframes pulse-step {
+          0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+          50% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+        }
+
+        .step-label {
+          font-size: 0.8rem;
+          color: #94a3b8;
+          text-align: center;
+          font-weight: 500;
+        }
+
+        .progress-step.active .step-label {
+          color: #3b82f6;
+          font-weight: 600;
+        }
+
+        .progress-step.completed .step-label {
+          color: #10b981;
+          font-weight: 600;
+        }
+
+        .loading-status {
+          text-align: center;
+          color: #3b82f6;
+          font-size: 1.1rem;
+          font-weight: 500;
+        }
+
+        .centered-response-card {
+          background: rgba(15, 23, 42, 0.8);
+          backdrop-filter: blur(20px);
+          border: 1px solid rgba(59, 130, 246, 0.2);
+          border-radius: 20px;
+          padding: 2rem;
+          margin: 1rem auto;
+          max-width: 100%;
+          text-align: left;
+          animation: fadeInUp 1s ease-out;
+        }
+
+        .response-header {
           margin-bottom: 1rem;
-          padding-bottom: 0.5rem;
-          border-bottom: 2px solid rgba(102, 126, 234, 0.1);
-          background: linear-gradient(135deg, #667eea, #764ba2);
+        }
+
+        .response-title {
+          font-size: 1.5rem;
+          font-weight: 700;
+          background: linear-gradient(135deg, #3b82f6, #8b5cf6);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
         }
 
-        .result-content {
-          color: #4a5568;
+        .response-content {
+          color: #cbd5e1;
           line-height: 1.7;
           font-size: 1rem;
           white-space: pre-wrap;
+          text-align: left;
         }
 
-        @keyframes slideDown {
-          from {
-            opacity: 0;
-            transform: translateY(-30px);
+        .typing-content {
+          display: inline;
+        }
+
+        .why-choose-us-section {
+          margin: 3rem auto;
+          max-width: 1200px;
+          text-align: center;
+        }
+
+        .why-choose-us-title {
+          font-size: 2.5rem;
+          font-weight: 900;
+          background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #10b981 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          margin-bottom: 2rem;
+        }
+
+        .why-choose-us-cards {
+          display: flex;
+          justify-content: center;
+          gap: 2rem;
+          flex-wrap: wrap;
+        }
+
+        .why-choose-us-card {
+          background: rgba(15, 23, 42, 0.8);
+          backdrop-filter: blur(20px);
+          border: 1px solid rgba(59, 130, 246, 0.2);
+          border-radius: 20px;
+          padding: 2rem;
+          max-width: 350px;
+          text-align: center;
+          opacity: 0;
+          transform: translateY(30px);
+          transition: all 0.6s ease;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .why-choose-us-card.visible {
+          opacity: 1;
+          transform: translateY(0);
+        }
+
+        .card-border-glow {
+          position: absolute;
+          top: -2px;
+          left: -2px;
+          right: -2px;
+          bottom: -2px;
+          background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+          border-radius: 22px;
+          filter: blur(10px);
+          opacity: 0.3;
+          z-index: -1;
+          animation: pulse-card-glow 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse-card-glow {
+          0%, 100% {
+            opacity: 0.3;
+            transform: scale(1);
           }
-          to {
-            opacity: 1;
-            transform: translateY(0);
+          50% {
+            opacity: 0.5;
+            transform: scale(1.02);
           }
         }
 
-        @keyframes slideUp {
+        .card-icon {
+          font-size: 2.5rem;
+          margin-bottom: 1rem;
+          color: #3b82f6;
+          transition: all 0.3s ease;
+        }
+
+        .card-title {
+          font-size: 1.5rem;
+          font-weight: 700;
+          margin-bottom: 1rem;
+          background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+        }
+
+        .card-description {
+          color: #cbd5e1;
+          line-height: 1.7;
+          font-size: 1rem;
+        }
+
+        .error {
+          background: rgba(239, 68, 68, 0.1);
+          border: 1px solid rgba(239, 68, 68, 0.3);
+          color: #ef4444;
+          padding: 1rem 2rem;
+          border-radius: 12px;
+          font-weight: 500;
+          text-align: center;
+          backdrop-filter: blur(10px);
+        }
+
+        @keyframes fadeInUp {
           from {
             opacity: 0;
             transform: translateY(30px);
@@ -410,32 +707,10 @@ function PatentAssistant() {
           }
         }
 
-        @keyframes slideInLeft {
+        @keyframes slideUp {
           from {
             opacity: 0;
-            transform: translateX(-50px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(0);
-          }
-        }
-
-        @keyframes slideInRight {
-          from {
-            opacity: 0;
-            transform: translateX(50px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(0);
-          }
-        }
-
-        @keyframes slideIn {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
+            transform: translateY(50px);
           }
           to {
             opacity: 1;
@@ -447,87 +722,123 @@ function PatentAssistant() {
         @media (max-width: 768px) {
           .container {
             padding: 1rem;
+            justify-content: center;
+            align-items: center;
+          }
+
+          .main-content {
+            width: 100%;
+            max-width: 100%;
           }
 
           .title {
             font-size: 2.5rem;
           }
 
-          .subtitle {
-            font-size: 1rem;
-          }
-
           .input-section {
-            padding: 1.5rem;
-            border-radius: 16px;
+            padding: 2rem;
           }
 
-          .chat-message {
-            max-width: 90%;
+          .progress-steps {
+            flex-direction: column;
+            gap: 1rem;
           }
 
-          .message-content {
-            padding: 1.2rem;
+          .progress-steps::before {
+            display: none;
           }
 
-          .submit-button {
-            padding: 0.8rem 2rem;
-            font-size: 1rem;
+          .centered-response-card {
+            max-width: 95%;
+          }
+
+          .feature-badges {
+            flex-direction: column;
+            align-items: center;
           }
         }
 
         @media (max-width: 480px) {
+          .container {
+            padding: 0.5rem;
+          }
+
           .title {
             font-size: 2rem;
           }
 
           .input-section {
-            padding: 1.2rem;
+            padding: 1.5rem;
           }
 
-          .chat-message {
-            max-width: 95%;
-          }
-
-          .message-content {
-            padding: 1rem;
+          .centered-response-card {
+            padding: 1.5rem;
           }
         }
       `}</style>
 
       <div className="container">
+        <div className="particles-bg">
+          {[...Array(20)].map((_, i) => (
+            <Particle key={i} delay={i * 0.5} />
+          ))}
+        </div>
+
         <div className="main-content">
           <div className="header">
-            <h1 className="title">Patent Filing Assistant</h1>
-            <p className="subtitle">Transform your innovative ideas into patent applications</p>
+            <div className="title-container">
+              <h1 className="title">Patent Forge AI</h1>
+            </div>
+            <p className="subtitle">Transform groundbreaking ideas into protected intellectual property</p>
+            <div className="feature-badges">
+              <div className="badge">🧠 AI-Powered Analysis</div>
+              <div className="badge">🔍 Prior Art Research</div>
+              <div className="badge">⚡ Instant Claims Generation</div>
+            </div>
           </div>
 
           <div className="input-section">
-            <label className="input-label">Describe Your Innovation</label>
+            <label className="input-label">
+              <Lightbulb className="w-5 h-5" />
+              Describe Your Revolutionary Innovation
+            </label>
             <textarea
               className="idea-textarea"
               value={idea}
               onChange={(e) => setIdea(e.target.value)}
-              placeholder="Enter your innovative idea in detail... Describe the problem it solves, how it works, and what makes it unique."
+              placeholder="Describe your breakthrough innovation in detail... What problem does it solve? How does it work? What makes it uniquely different from existing solutions?"
             />
             <button
               className="submit-button"
               onClick={handleSubmit}
               disabled={loading || !idea.trim()}
             >
-              {loading ? 'Processing...' : 'Analyze & Generate Patent'}
+              {loading ? 'AI Agents Processing...' : 'Launch Patent Analysis'}
             </button>
           </div>
 
-          <div className="status-section">
-            {loading && (
-              <div className="loading">
-                <div className="loading-spinner"></div>
-                AI agents analyzing your innovation...
+          {loading && (
+            <div className="progress-container">
+              <div className="progress-steps">
+                {steps.map((step, index) => (
+                  <ProgressStep
+                    key={index}
+                    step={step.name}
+                    icon={step.icon}
+                    isActive={currentStep === index + 1}
+                    isCompleted={currentStep > index + 1}
+                  />
+                ))}
               </div>
-            )}
-            {error && <div className="error">{error}</div>}
-          </div>
+              <div className="loading-status">
+                {currentStep > 0 && currentStep <= steps.length
+                  ? `${steps[currentStep - 1].name}...`
+                  : 'Initializing AI Agents...'}
+              </div>
+            </div>
+          )}
+
+          {error && <div className="error">{error}</div>}
 
           {stepResults.length > 0 && (
             <div className="chat-container">
@@ -536,19 +847,32 @@ function PatentAssistant() {
                 const contentObj = step[agentKey];
                 const contentKey = Object.keys(contentObj)[0];
                 const contentValue = contentObj[contentKey];
-                const agentName = agentNames[index] || formatTitle(agentKey);
+                const agentName = agentNames[steps.indexOf(steps.find(s => s.name.toLowerCase().includes(agentKey.toLowerCase())))] || formatTitle(agentKey);
 
                 return (
-                  <ResultCard
+                  <CenteredResponseCard
                     key={index}
                     title={`${agentName} → ${formatTitle(contentKey)}`}
                     content={contentValue}
-                    isEven={index % 2 === 1}
                   />
                 );
               })}
             </div>
           )}
+
+          <div className="why-choose-us-section">
+            <h2 className="why-choose-us-title">Why Choose Us?</h2>
+            <div className="why-choose-us-cards">
+              {whyChooseUsData.map((item, index) => (
+                <WhyChooseUsCard
+                  key={index}
+                  title={item.title}
+                  description={item.description}
+                  icon={item.icon}
+                />
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </>
