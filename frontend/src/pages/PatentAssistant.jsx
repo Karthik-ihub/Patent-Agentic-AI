@@ -1,41 +1,27 @@
 import { useState, useEffect, useRef } from "react";
-import { Lightbulb, Zap, FileText, Search, CheckCircle, Sparkles, Brain, Shield, Rocket } from "lucide-react";
+import {
+  Lightbulb,
+  Zap,
+  FileText,
+  Search,
+  Brain,
+  Rocket,
+  Scale,
+  BookOpen,
+  BadgeIcon as Certificate,
+} from "lucide-react";
 
-// Particle component for floating animation
-const Particle = ({ delay = 0 }) => (
+// Legal document floating animation
+const LegalDocument = ({ delay = 0 }) => (
   <div
-    className="particle"
+    className="legal-document"
     style={{
       animationDelay: `${delay}s`,
       left: `${Math.random() * 100}%`,
-      animationDuration: `${8 + Math.random() * 4}s`
+      animationDuration: `${12 + Math.random() * 6}s`,
     }}
   />
 );
-
-// Typing animation component
-const TypingAnimation = ({ text, speed = 20 }) => {
-  const [displayedText, setDisplayedText] = useState("");
-  const index = useRef(0);
-
-  useEffect(() => {
-    const typingInterval = setInterval(() => {
-      if (index.current < text.length) {
-        setDisplayedText(prev => prev + text.charAt(index.current));
-        index.current += 1;
-      } else {
-        clearInterval(typingInterval);
-      }
-    }, speed);
-
-    return () => {
-      clearInterval(typingInterval);
-      index.current = 0;
-    };
-  }, [text, speed]);
-
-  return <div className="typing-content">{displayedText}</div>;
-};
 
 // CenteredResponseCard component for displaying responses
 const CenteredResponseCard = ({ title, content }) => {
@@ -44,9 +30,7 @@ const CenteredResponseCard = ({ title, content }) => {
       <div className="response-header">
         <h3 className="response-title">{title}</h3>
       </div>
-      <div className="response-content">
-        <TypingAnimation text={content} />
-      </div>
+      <div className="response-content">{content}</div>
     </div>
   );
 };
@@ -61,8 +45,8 @@ const WhyChooseUsCard = ({ title, description, icon }) => {
   }, []);
 
   return (
-    <div className={`why-choose-us-card ${isVisible ? 'visible' : ''}`}>
-      <div className="card-border-glow"></div>
+    <div className={`why-choose-us-card ${isVisible ? "visible" : ""}`}>
+      <div className="card-legal-seal"></div>
       <div className="card-icon">{icon}</div>
       <div className="card-content">
         <h3 className="card-title">{title}</h3>
@@ -72,12 +56,181 @@ const WhyChooseUsCard = ({ title, description, icon }) => {
   );
 };
 
+// Enhanced WorkflowStep component for roadmap
+const WorkflowStep = ({ step, description, icon, index, isActive, isCompleted }) => {
+  const stepRef = useRef(null);
+
+  return (
+    <div ref={stepRef} className={`roadmap-step ${isActive ? "active" : ""} ${isCompleted ? "completed" : ""}`}>
+      <div className="step-timeline">
+        <div className="step-node">
+          <div className="step-node-inner">
+            <div className="step-icon-container">{icon}</div>
+          </div>
+          <div className="step-legal-ring"></div>
+        </div>
+      </div>
+
+      <div className="step-content-container">
+        <div className="step-content-card">
+          <div className="step-number">Article {index + 1}</div>
+          <h3 className="step-title">{step}</h3>
+          <p className="step-description">{description}</p>
+          <div className="step-progress-bar">
+            <div className="step-progress-fill"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Enhanced HowItWorksSection component with corner-placed cards and timeline
+const HowItWorksSection = () => {
+  const [activeStep, setActiveStep] = useState(0);
+  const [completedSteps, setCompletedSteps] = useState(new Set());
+  const sectionRef = useRef(null);
+
+  const workflowData = [
+    {
+      step: "Idea Submission",
+      description:
+        "Submit your innovative idea in detail. Describe the problem it solves, how it works, and what makes it unique.",
+      icon: <Lightbulb className="w-6 h-6" />,
+    },
+    {
+      step: "Innovation Analysis",
+      description: "Our system analyzes your innovation to understand its core components and potential patentability.",
+      icon: <Brain className="w-6 h-6" />,
+    },
+    {
+      step: "Prior Art Research",
+      description:
+        "We conduct comprehensive research to ensure your innovation is unique and hasn't been patented before.",
+      icon: <Search className="w-6 h-6" />,
+    },
+    {
+      step: "Claims Generation",
+      description: "Our advanced algorithms generate patent claims that define the scope of your innovation.",
+      icon: <Zap className="w-6 h-6" />,
+    },
+    {
+      step: "Application Drafting",
+      description: "We draft a detailed patent application, including all necessary legal and technical descriptions.",
+      icon: <FileText className="w-6 h-6" />,
+    },
+    {
+      step: "Filing Preparation",
+      description: "We prepare all the documents required for filing and guide you through the submission process.",
+      icon: <Rocket className="w-6 h-6" />,
+    },
+  ];
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!sectionRef.current) return;
+
+      const sectionRect = sectionRef.current.getBoundingClientRect();
+      const sectionTop = sectionRect.top;
+      const sectionHeight = sectionRect.height;
+      const windowHeight = window.innerHeight;
+
+      const progress = Math.max(0, Math.min(1, (windowHeight - sectionTop) / (sectionHeight + windowHeight)));
+      const stepProgress = progress * workflowData.length;
+      const currentActiveStep = Math.floor(stepProgress);
+
+      setActiveStep(currentActiveStep);
+
+      const newCompletedSteps = new Set();
+      for (let i = 0; i < currentActiveStep; i++) {
+        newCompletedSteps.add(i);
+      }
+      setCompletedSteps(newCompletedSteps);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    handleScroll();
+
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [workflowData.length]);
+
+  const totalPathLength = 1200; // Adjusted for 6 cards
+  const progressLength = (activeStep / (workflowData.length - 1)) * totalPathLength;
+
+  return (
+    <div className="roadmap-section" ref={sectionRef}>
+      <div className="roadmap-header">
+        <div className="legal-emblem">
+          <Scale className="w-8 h-8" />
+        </div>
+        <h2 className="roadmap-title">Patent Process Framework</h2>
+        <p className="roadmap-subtitle">A systematic approach to intellectual property protection</p>
+      </div>
+
+      <div className="roadmap-container">
+        <div className="roadmap-timeline">
+          <svg className="timeline-svg" viewBox="0 0 800 1400" preserveAspectRatio="xMidYMid meet">
+            <defs>
+              <linearGradient id="legalGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#1e40af" />
+                <stop offset="50%" stopColor="#059669" />
+                <stop offset="100%" stopColor="#d97706" />
+              </linearGradient>
+              <pattern id="legalPattern" patternUnits="userSpaceOnUse" width="20" height="20">
+                <rect width="20" height="20" fill="none" stroke="rgba(30, 64, 175, 0.1)" strokeWidth="1" />
+              </pattern>
+            </defs>
+
+            <path
+              className="timeline-path"
+              d="M400 50
+                Q200 150 400 250
+                Q600 350 400 450
+                Q200 550 400 650
+                Q600 750 400 850
+                Q200 950 400 1050
+                Q600 1150 400 1250
+                Q200 1350 400 1400"
+            />
+
+            <path
+              className="timeline-progress-path"
+              d="M400 50
+                Q200 150 400 250
+                Q600 350 400 450
+                Q200 550 400 650
+                Q600 750 400 850
+                Q200 950 400 1050
+                Q600 1150 400 1250
+                Q200 1350 400 1400"
+              strokeDasharray={`${progressLength} ${totalPathLength}`}
+              strokeDashoffset="0"
+            />
+          </svg>
+        </div>
+
+        <div className="roadmap-steps">
+          {workflowData.map((item, index) => (
+            <WorkflowStep
+              key={index}
+              step={item.step}
+              description={item.description}
+              icon={item.icon}
+              index={index}
+              isActive={activeStep === index}
+              isCompleted={completedSteps.has(index)}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Progress indicator component
 const ProgressStep = ({ step, isActive, isCompleted, icon }) => (
-  <div className={`progress-step ${isActive ? 'active' : ''} ${isCompleted ? 'completed' : ''}`}>
-    <div className="step-icon">
-      {icon}
-    </div>
+  <div className={`progress-step ${isActive ? "active" : ""} ${isCompleted ? "completed" : ""}`}>
+    <div className="step-icon">{icon}</div>
     <span className="step-label">{step}</span>
   </div>
 );
@@ -88,13 +241,14 @@ function PatentAssistant() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [currentStep, setCurrentStep] = useState(0);
+  const [typingComplete, setTypingComplete] = useState(false);
 
   const steps = [
     { name: "Analyzing Innovation", icon: <Brain className="w-5 h-5" /> },
     { name: "Researching Prior Art", icon: <Search className="w-5 h-5" /> },
     { name: "Generating Claims", icon: <Zap className="w-5 h-5" /> },
     { name: "Drafting Application", icon: <FileText className="w-5 h-5" /> },
-    { name: "Preparing Filing", icon: <Rocket className="w-5 h-5" /> }
+    { name: "Preparing Filing", icon: <Rocket className="w-5 h-5" /> },
   ];
 
   const handleSubmit = async () => {
@@ -102,9 +256,9 @@ function PatentAssistant() {
     setError("");
     setStepResults([]);
     setCurrentStep(0);
+    setTypingComplete(false);
 
     try {
-      // Actual API call to your backend
       const response = await fetch("http://localhost:8000/api/run-agent/", {
         method: "POST",
         headers: {
@@ -119,19 +273,16 @@ function PatentAssistant() {
 
       const data = await response.json();
       const steps = data.steps;
+      const filteredSteps = steps.filter((step, index) => index === 3 || index === 4);
 
-      // Filter results to only include Draft Writer Agent and Patent Filing Agent
-      const filteredSteps = steps.filter((step, index) =>
-        index === 3 || index === 4 // Draft Writer Agent (index 3) and Patent Filing Agent (index 4)
-      );
-
-      // Display filtered results
       for (let i = 0; i < filteredSteps.length; i++) {
         setCurrentStep(steps.indexOf(filteredSteps[i]) + 1);
         await new Promise((resolve) => setTimeout(resolve, 1200));
         setStepResults((prev) => [...prev, filteredSteps[i]]);
       }
+
       setCurrentStep(steps.length);
+      setTypingComplete(true);
     } catch (err) {
       setError("Failed to connect to the backend. Please ensure the server is running and try again.");
       console.error("API Error:", err);
@@ -154,25 +305,25 @@ function PatentAssistant() {
 
   const whyChooseUsData = [
     {
-      title: "AI-Powered Analysis",
-      description: "Our advanced AI algorithms analyze your innovation to provide the best patent strategy.",
-      icon: <Brain className="w-6 h-6" />
+      title: "Legal Expertise",
+      description: "Our AI is trained on extensive patent law databases and legal precedents for accurate analysis.",
+      icon: <Scale className="w-6 h-6" />,
     },
     {
-      title: "Prior Art Research",
-      description: "We conduct thorough research to ensure your innovation is unique and patentable.",
-      icon: <Search className="w-6 h-6" />
+      title: "Comprehensive Research",
+      description: "We conduct thorough prior art searches across global patent databases and legal repositories.",
+      icon: <BookOpen className="w-6 h-6" />,
     },
     {
-      title: "Instant Claims Generation",
-      description: "Our AI generates patent claims instantly, saving you time and effort.",
-      icon: <Zap className="w-6 h-6" />
-    }
+      title: "Professional Documentation",
+      description: "Generate legally compliant patent applications that meet USPTO and international standards.",
+      icon: <Certificate className="w-6 h-6" />,
+    },
   ];
 
   return (
     <>
-      <style>{`
+      <style jsx>{`
         * {
           margin: 0;
           padding: 0;
@@ -180,10 +331,10 @@ function PatentAssistant() {
         }
 
         body {
-          font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-          background: #0a0e1a;
+          font-family: 'Georgia', 'Times New Roman', serif;
+          background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
           min-height: 100vh;
-          color: #ffffff;
+          color: #1e293b;
           margin: 0;
           padding: 0;
           display: flex;
@@ -201,9 +352,9 @@ function PatentAssistant() {
           justify-content: center;
           align-items: center;
           background:
-            radial-gradient(circle at 20% 20%, rgba(59, 130, 246, 0.15) 0%, transparent 50%),
-            radial-gradient(circle at 80% 80%, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
-            radial-gradient(circle at 40% 60%, rgba(16, 185, 129, 0.1) 0%, transparent 50%);
+            radial-gradient(circle at 20% 20%, rgba(30, 64, 175, 0.08) 0%, transparent 50%),
+            radial-gradient(circle at 80% 80%, rgba(5, 150, 105, 0.08) 0%, transparent 50%),
+            radial-gradient(circle at 40% 60%, rgba(217, 119, 6, 0.05) 0%, transparent 50%);
           box-sizing: border-box;
         }
 
@@ -217,29 +368,30 @@ function PatentAssistant() {
           z-index: 0;
         }
 
-        .particle {
+        .legal-document {
           position: absolute;
-          width: 3px;
-          height: 3px;
-          background: linear-gradient(45deg, #3b82f6, #8b5cf6);
-          border-radius: 50%;
-          animation: float-particle linear infinite;
-          opacity: 0.7;
+          width: 8px;
+          height: 12px;
+          background: linear-gradient(45deg, #1e40af, #059669);
+          border-radius: 1px;
+          animation: float-document linear infinite;
+          opacity: 0.3;
+          box-shadow: 0 0 4px rgba(30, 64, 175, 0.3);
         }
 
-        @keyframes float-particle {
+        @keyframes float-document {
           0% {
             transform: translateY(100vh) rotate(0deg);
             opacity: 0;
           }
           10% {
-            opacity: 0.7;
+            opacity: 0.3;
           }
           90% {
-            opacity: 0.7;
+            opacity: 0.3;
           }
           100% {
-            transform: translateY(-100px) rotate(360deg);
+            transform: translateY(-100px) rotate(180deg);
             opacity: 0;
           }
         }
@@ -277,52 +429,39 @@ function PatentAssistant() {
 
         .title {
           font-size: 4rem;
-          font-weight: 900;
-          background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #10b981 100%);
+          font-weight: 700;
+          background: linear-gradient(135deg, #1e40af 0%, #059669 50%, #d97706 100%);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
           margin-bottom: 1rem;
           line-height: 1.1;
           position: relative;
-          animation: textGlow 3s ease-in-out infinite alternate;
-        }
-
-        @keyframes textGlow {
-          0% {
-            filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.5));
-          }
-          100% {
-            filter: drop-shadow(0 0 20px rgba(139, 92, 246, 0.8));
-          }
+          font-family: 'Georgia', serif;
+          letter-spacing: -0.02em;
         }
 
         .title::before {
           content: '';
           position: absolute;
-          top: -10px;
-          left: -10px;
-          right: -10px;
-          bottom: -10px;
-          background: linear-gradient(135deg, #3b82f6, #8b5cf6, #10b981);
-          border-radius: 20px;
-          filter: blur(20px);
-          opacity: 0.3;
+          top: -5px;
+          left: -5px;
+          right: -5px;
+          bottom: -5px;
+          background: linear-gradient(135deg, #1e40af, #059669, #d97706);
+          border-radius: 8px;
+          filter: blur(15px);
+          opacity: 0.1;
           z-index: -1;
-          animation: pulse-glow 2s ease-in-out infinite;
-        }
-
-        @keyframes pulse-glow {
-          0%, 100% { opacity: 0.3; transform: scale(1); }
-          50% { opacity: 0.5; transform: scale(1.05); }
         }
 
         .subtitle {
           font-size: 1.3rem;
-          color: #94a3b8;
+          color: #64748b;
           font-weight: 400;
-          letter-spacing: 0.5px;
+          letter-spacing: 0.3px;
           margin-bottom: 2rem;
+          font-family: 'Georgia', serif;
         }
 
         .feature-badges {
@@ -334,34 +473,34 @@ function PatentAssistant() {
         }
 
         .badge {
-          background: rgba(59, 130, 246, 0.1);
-          border: 1px solid rgba(59, 130, 246, 0.3);
-          padding: 0.5rem 1rem;
-          border-radius: 50px;
+          background: rgba(255, 255, 255, 0.9);
+          border: 2px solid rgba(30, 64, 175, 0.2);
+          padding: 0.7rem 1.5rem;
+          border-radius: 25px;
           font-size: 0.9rem;
-          color: #3b82f6;
+          color: #1e40af;
           backdrop-filter: blur(10px);
-          animation: float 3s ease-in-out infinite;
+          font-weight: 600;
+          box-shadow: 0 4px 15px rgba(30, 64, 175, 0.1);
+          transition: all 0.3s ease;
         }
 
-        .badge:nth-child(2) { animation-delay: 0.5s; }
-        .badge:nth-child(3) { animation-delay: 1s; }
-
-        @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-5px); }
+        .badge:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 8px 25px rgba(30, 64, 175, 0.15);
         }
 
         .input-section {
-          background: rgba(15, 23, 42, 0.8);
+          background: rgba(255, 255, 255, 0.95);
           backdrop-filter: blur(20px);
-          border: 1px solid rgba(59, 130, 246, 0.2);
-          border-radius: 24px;
+          border: 2px solid rgba(30, 64, 175, 0.1);
+          border-radius: 20px;
           padding: 3rem;
           margin-bottom: 3rem;
           position: relative;
           overflow: hidden;
           animation: slideUp 0.8s ease-out 0.2s both;
+          box-shadow: 0 20px 40px rgba(30, 64, 175, 0.08);
         }
 
         .input-section::before {
@@ -370,68 +509,67 @@ function PatentAssistant() {
           top: 0;
           left: 0;
           right: 0;
-          height: 1px;
-          background: linear-gradient(90deg, transparent, #3b82f6, transparent);
-          animation: shimmer 2s ease-in-out infinite;
-        }
-
-        @keyframes shimmer {
-          0% { transform: translateX(-100%); }
-          100% { transform: translateX(100%); }
+          height: 3px;
+          background: linear-gradient(90deg, transparent, #1e40af, #059669, #d97706, transparent);
         }
 
         .input-label {
           display: flex;
           align-items: center;
-          gap: 0.5rem;
-          font-size: 1.2rem;
+          gap: 0.7rem;
+          font-size: 1.3rem;
           font-weight: 600;
-          color: #e2e8f0;
+          color: #1e293b;
           margin-bottom: 1.5rem;
+          font-family: 'Georgia', serif;
         }
 
         .idea-textarea {
           width: 100%;
           min-height: 150px;
           padding: 1.5rem;
-          background: rgba(30, 41, 59, 0.5);
-          border: 2px solid rgba(59, 130, 246, 0.2);
-          border-radius: 16px;
+          background: rgba(248, 250, 252, 0.8);
+          border: 2px solid rgba(30, 64, 175, 0.2);
+          border-radius: 12px;
           font-size: 1rem;
-          font-family: inherit;
-          color: #e2e8f0;
+          font-family: 'Georgia', serif;
+          color: #1e293b;
           resize: vertical;
           transition: all 0.3s ease;
           outline: none;
+          line-height: 1.6;
         }
 
         .idea-textarea:focus {
-          border-color: #3b82f6;
-          background: rgba(30, 41, 59, 0.8);
+          border-color: #1e40af;
+          background: rgba(255, 255, 255, 0.95);
           box-shadow:
-            0 0 0 4px rgba(59, 130, 246, 0.1),
-            0 0 20px rgba(59, 130, 246, 0.2);
+            0 0 0 4px rgba(30, 64, 175, 0.1),
+            0 8px 25px rgba(30, 64, 175, 0.15);
           transform: translateY(-2px);
         }
 
         .idea-textarea::placeholder {
           color: #64748b;
+          font-style: italic;
         }
 
         .submit-button {
-          background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+          background: linear-gradient(135deg, #1e40af 0%, #059669 100%);
           color: white;
           border: none;
-          padding: 1.2rem 3rem;
+          padding: 1.3rem 3.5rem;
           font-size: 1.1rem;
           font-weight: 600;
-          border-radius: 50px;
+          border-radius: 30px;
           cursor: pointer;
           transition: all 0.3s ease;
           margin-top: 2rem;
           position: relative;
           overflow: hidden;
-          box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3);
+          box-shadow: 0 8px 25px rgba(30, 64, 175, 0.3);
+          font-family: 'Georgia', serif;
+          letter-spacing: 0.5px;
         }
 
         .submit-button::before {
@@ -451,11 +589,7 @@ function PatentAssistant() {
 
         .submit-button:hover {
           transform: translateY(-3px);
-          box-shadow: 0 15px 40px rgba(59, 130, 246, 0.4);
-        }
-
-        .submit-button:active {
-          transform: translateY(-1px);
+          box-shadow: 0 12px 35px rgba(30, 64, 175, 0.4);
         }
 
         .submit-button:disabled {
@@ -465,13 +599,14 @@ function PatentAssistant() {
         }
 
         .progress-container {
-          background: rgba(15, 23, 42, 0.8);
+          background: rgba(255, 255, 255, 0.95);
           backdrop-filter: blur(20px);
-          border: 1px solid rgba(59, 130, 246, 0.2);
-          border-radius: 20px;
+          border: 2px solid rgba(30, 64, 175, 0.1);
+          border-radius: 16px;
           padding: 2rem;
           margin: 2rem 0;
-          display: ${loading ? 'block' : 'none'};
+          display: ${loading ? "block" : "none"};
+          box-shadow: 0 15px 35px rgba(30, 64, 175, 0.08);
         }
 
         .progress-steps {
@@ -489,7 +624,7 @@ function PatentAssistant() {
           left: 0;
           right: 0;
           height: 2px;
-          background: rgba(59, 130, 246, 0.2);
+          background: rgba(30, 64, 175, 0.2);
           z-index: 0;
         }
 
@@ -503,11 +638,11 @@ function PatentAssistant() {
         }
 
         .step-icon {
-          width: 40px;
-          height: 40px;
+          width: 45px;
+          height: 45px;
           border-radius: 50%;
-          background: rgba(30, 41, 59, 0.8);
-          border: 2px solid rgba(59, 130, 246, 0.3);
+          background: rgba(248, 250, 252, 0.9);
+          border: 3px solid rgba(30, 64, 175, 0.2);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -516,120 +651,120 @@ function PatentAssistant() {
         }
 
         .progress-step.active .step-icon {
-          background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-          border-color: #3b82f6;
+          background: linear-gradient(135deg, #1e40af, #059669);
+          border-color: #1e40af;
           color: white;
-          animation: pulse-step 2s ease-in-out infinite;
+          box-shadow: 0 8px 25px rgba(30, 64, 175, 0.3);
         }
 
         .progress-step.completed .step-icon {
-          background: linear-gradient(135deg, #10b981, #3b82f6);
-          border-color: #10b981;
+          background: linear-gradient(135deg, #059669, #d97706);
+          border-color: #059669;
           color: white;
         }
 
-        @keyframes pulse-step {
-          0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
-          50% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
-        }
-
         .step-label {
-          font-size: 0.8rem;
-          color: #94a3b8;
+          font-size: 0.85rem;
+          color: #64748b;
           text-align: center;
           font-weight: 500;
+          font-family: 'Georgia', serif;
         }
 
         .progress-step.active .step-label {
-          color: #3b82f6;
+          color: #1e40af;
           font-weight: 600;
         }
 
         .progress-step.completed .step-label {
-          color: #10b981;
+          color: #059669;
           font-weight: 600;
         }
 
         .loading-status {
           text-align: center;
-          color: #3b82f6;
+          color: #1e40af;
           font-size: 1.1rem;
           font-weight: 500;
+          font-family: 'Georgia', serif;
         }
 
         .centered-response-card {
-          background: rgba(15, 23, 42, 0.8);
+          background: rgba(255, 255, 255, 0.95);
           backdrop-filter: blur(20px);
-          border: 1px solid rgba(59, 130, 246, 0.2);
-          border-radius: 20px;
-          padding: 2rem;
-          margin: 1rem auto;
+          border: 2px solid rgba(30, 64, 175, 0.1);
+          border-radius: 16px;
+          padding: 2.5rem;
+          margin: 1.5rem auto;
           max-width: 100%;
           text-align: left;
           animation: fadeInUp 1s ease-out;
+          box-shadow: 0 15px 35px rgba(30, 64, 175, 0.08);
         }
 
         .response-header {
-          margin-bottom: 1rem;
+          margin-bottom: 1.5rem;
+          border-bottom: 2px solid rgba(30, 64, 175, 0.1);
+          padding-bottom: 1rem;
         }
 
         .response-title {
-          font-size: 1.5rem;
+          font-size: 1.6rem;
           font-weight: 700;
-          background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+          background: linear-gradient(135deg, #1e40af, #059669);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
+          font-family: 'Georgia', serif;
         }
 
         .response-content {
-          color: #cbd5e1;
-          line-height: 1.7;
-          font-size: 1rem;
+          color: #374151;
+          line-height: 1.8;
+          font-size: 1.05rem;
           white-space: pre-wrap;
           text-align: left;
-        }
-
-        .typing-content {
-          display: inline;
+          font-family: 'Georgia', serif;
         }
 
         .why-choose-us-section {
-          margin: 3rem auto;
+          margin: 4rem auto;
           max-width: 1200px;
           text-align: center;
         }
 
         .why-choose-us-title {
-          font-size: 2.5rem;
-          font-weight: 900;
-          background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #10b981 100%);
+          font-size: 2.8rem;
+          font-weight: 700;
+          background: linear-gradient(135deg, #1e40af 0%, #059669 50%, #d97706 100%);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
-          margin-bottom: 2rem;
+          margin-bottom: 2.5rem;
+          font-family: 'Georgia', serif;
         }
 
         .why-choose-us-cards {
           display: flex;
           justify-content: center;
-          gap: 2rem;
+          gap: 2.5rem;
           flex-wrap: wrap;
         }
 
         .why-choose-us-card {
-          background: rgba(15, 23, 42, 0.8);
+          background: rgba(255, 255, 255, 0.95);
           backdrop-filter: blur(20px);
-          border: 1px solid rgba(59, 130, 246, 0.2);
+          border: 2px solid rgba(30, 64, 175, 0.1);
           border-radius: 20px;
-          padding: 2rem;
-          max-width: 350px;
+          padding: 2.5rem;
+          max-width: 380px;
           text-align: center;
           opacity: 0;
           transform: translateY(30px);
           transition: all 0.6s ease;
           position: relative;
           overflow: hidden;
+          box-shadow: 0 15px 35px rgba(30, 64, 175, 0.08);
         }
 
         .why-choose-us-card.visible {
@@ -637,63 +772,530 @@ function PatentAssistant() {
           transform: translateY(0);
         }
 
-        .card-border-glow {
-          position: absolute;
-          top: -2px;
-          left: -2px;
-          right: -2px;
-          bottom: -2px;
-          background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-          border-radius: 22px;
-          filter: blur(10px);
-          opacity: 0.3;
-          z-index: -1;
-          animation: pulse-card-glow 3s ease-in-out infinite;
+        .why-choose-us-card:hover {
+          transform: translateY(-5px);
+          box-shadow: 0 25px 50px rgba(30, 64, 175, 0.15);
         }
 
-        @keyframes pulse-card-glow {
-          0%, 100% {
-            opacity: 0.3;
-            transform: scale(1);
-          }
-          50% {
-            opacity: 0.5;
-            transform: scale(1.02);
-          }
+        .card-legal-seal {
+          position: absolute;
+          top: -1px;
+          left: -1px;
+          right: -1px;
+          bottom: -1px;
+          background: linear-gradient(135deg, #1e40af, #059669);
+          border-radius: 22px;
+          filter: blur(8px);
+          opacity: 0.1;
+          z-index: -1;
         }
 
         .card-icon {
-          font-size: 2.5rem;
-          margin-bottom: 1rem;
-          color: #3b82f6;
+          font-size: 3rem;
+          margin-bottom: 1.5rem;
+          color: #1e40af;
           transition: all 0.3s ease;
         }
 
         .card-title {
-          font-size: 1.5rem;
+          font-size: 1.6rem;
           font-weight: 700;
+          margin-bottom: 1.2rem;
+          background: linear-gradient(135deg, #1e40af, #059669);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          font-family: 'Georgia', serif;
+        }
+
+        .card-description {
+          color: #4b5563;
+          line-height: 1.7;
+          font-size: 1.05rem;
+          font-family: 'Georgia', serif;
+        }
+
+        .error {
+          background: rgba(239, 68, 68, 0.1);
+          border: 2px solid rgba(239, 68, 68, 0.3);
+          color: #dc2626;
+          padding: 1.2rem 2rem;
+          border-radius: 12px;
+          font-weight: 500;
+          text-align: center;
+          backdrop-filter: blur(10px);
+          font-family: 'Georgia', serif;
+        }
+
+        .roadmap-section {
+          margin: 6rem auto;
+          max-width: 100%;
+          padding: 4rem 1rem;
+          position: relative;
+          background: rgba(255, 255, 255, 0.02);
+          border-radius: 30px;
+        }
+
+        .roadmap-header {
+          text-align: center;
+          margin-bottom: 4rem;
+        }
+
+        .legal-emblem {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 80px;
+          height: 80px;
+          background: linear-gradient(135deg, #1e40af, #059669);
+          border-radius: 50%;
+          margin-bottom: 2rem;
+          color: white;
+          box-shadow: 0 15px 35px rgba(30, 64, 175, 0.3);
+        }
+
+        .roadmap-title {
+          font-size: 3.2rem;
+          font-weight: 700;
+          background: linear-gradient(135deg, #1e40af 0%, #059669 50%, #d97706 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
           margin-bottom: 1rem;
-          background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+          font-family: 'Georgia', serif;
+          letter-spacing: -0.02em;
+        }
+
+        .roadmap-subtitle {
+          font-size: 1.3rem;
+          color: #64748b;
+          font-weight: 400;
+          font-family: 'Georgia', serif;
+          font-style: italic;
+        }
+
+        .roadmap-container {
+          position: relative;
+          max-width: 100%;
+          margin: 0 auto;
+          padding: 2rem 0;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+        }
+
+        .roadmap-timeline {
+          position: absolute;
+          left: 50%;
+          top: 0;
+          bottom: 0;
+          width: 100%;
+          transform: translateX(-50%);
+          pointer-events: none;
+          z-index: 1;
+        }
+
+        .timeline-svg {
+          width: 100%;
+          height: 100%;
+          position: absolute;
+          top: 0;
+          left: 0;
+        }
+
+        .timeline-path {
+          fill: none;
+          stroke: rgba(30, 64, 175, 0.2);
+          stroke-width: 3;
+          stroke-dasharray: 12, 8;
+          animation: legal-dash-flow 25s linear infinite;
+        }
+
+        .timeline-progress-path {
+          fill: none;
+          stroke: url(#legalGradient);
+          stroke-width: 5;
+          stroke-linecap: round;
+          filter: drop-shadow(0 0 12px rgba(30, 64, 175, 0.4));
+          transition: stroke-dasharray 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes legal-dash-flow {
+          0% { stroke-dashoffset: 0; }
+          100% { stroke-dashoffset: 200; }
+        }
+
+        .roadmap-steps {
+          position: relative;
+          z-index: 2;
+          width: 100%;
+          display: flex;
+          flex-direction: column;
+          gap: 2rem; /* Gap between cards */
+        }
+
+        .roadmap-step {
+          width: 100%;
+          max-width: 480px; /* Card width */
+          margin-bottom: 6rem;
+          opacity: 0.25;
+          transition: all 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+          position: relative;
+          display: flex;
+          justify-content: center;
+          align-items: flex-start;
+        }
+
+        .roadmap-step:nth-child(odd) {
+          margin-right: auto;
+          margin-left: 1rem; /* Push to left edge with minimal padding */
+          justify-content: flex-start;
+        }
+
+        .roadmap-step:nth-child(even) {
+          margin-left: auto;
+          margin-right: 1rem; /* Push to right edge with minimal padding */
+          justify-content: flex-end;
+        }
+
+        .roadmap-step.active {
+          opacity: 1;
+          transform: scale(1.02);
+        }
+
+        .roadmap-step.completed {
+          opacity: 0.8;
+        }
+
+        .step-timeline {
+          position: relative;
+          width: 90px;
+          height: 90px;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 3;
+          margin-bottom: 1rem;
+        }
+
+        .step-node {
+          position: relative;
+          width: 80px;
+          height: 80px;
+          border-radius: 50%;
+          background: rgba(255, 255, 255, 0.95);
+          border: 4px solid rgba(30, 64, 175, 0.2);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+          backdrop-filter: blur(15px);
+          box-shadow: 0 8px 25px rgba(30, 64, 175, 0.1);
+        }
+
+        .roadmap-step.active .step-node {
+          border-color: #1e40af;
+          background: linear-gradient(135deg, #1e40af, #059669);
+          box-shadow:
+            0 0 50px rgba(30, 64, 175, 0.6),
+            0 0 100px rgba(30, 64, 175, 0.3),
+            inset 0 2px 10px rgba(255, 255, 255, 0.2);
+          animation: legal-node-pulse 3s ease-in-out infinite;
+        }
+
+        .roadmap-step.completed .step-node {
+          border-color: #059669;
+          background: linear-gradient(135deg, #059669, #d97706);
+          box-shadow:
+            0 0 40px rgba(5, 150, 105, 0.5),
+            0 0 80px rgba(5, 150, 105, 0.2);
+        }
+
+        @keyframes legal-node-pulse {
+          0%, 100% {
+            transform: scale(1);
+            box-shadow:
+              0 0 50px rgba(30, 64, 175, 0.6),
+              0 0 100px rgba(30, 64, 175, 0.3),
+              inset 0 2px 10px rgba(255, 255, 255, 0.2);
+          }
+          50% {
+            transform: scale(1.08);
+            box-shadow:
+              0 0 70px rgba(30, 64, 175, 0.8),
+              0 0 140px rgba(30, 64, 175, 0.4),
+              inset 0 4px 20px rgba(255, 255, 255, 0.3);
+          }
+        }
+
+        .step-node-inner {
+          width: 100%;
+          height: 100%;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .step-icon-container {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          color: #64748b;
+          transition: all 0.4s ease;
+          z-index: 2;
+          font-size: 1.8rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .roadmap-step.active .step-icon-container {
+          color: white;
+          animation: legal-icon-glow 3s ease-in-out infinite;
+          transform: translate(-50%, -50%) scale(1.15);
+        }
+
+        .roadmap-step.completed .step-icon-container {
+          color: white;
+          transform: translate(-50%, -50%) scale(1.1);
+        }
+
+        @keyframes legal-icon-glow {
+          0%, 100% {
+            filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.7));
+            transform: translate(-50%, -50%) scale(1.15);
+          }
+          50% {
+            filter: drop-shadow(0 0 25px rgba(255, 255, 255, 1));
+            transform: translate(-50%, -50%) scale(1.25);
+          }
+        }
+
+        .step-legal-ring {
+          position: absolute;
+          top: -20px;
+          left: -20px;
+          right: -20px;
+          bottom: -20px;
+          border: 3px solid rgba(30, 64, 175, 0.3);
+          border-radius: 50%;
+          opacity: 0;
+          transform: scale(0.8);
+          transition: all 0.8s ease;
+        }
+
+        .roadmap-step.active .step-legal-ring {
+          opacity: 1;
+          transform: scale(1);
+          animation: legal-pulse-ring 3s ease-in-out infinite;
+        }
+
+        @keyframes legal-pulse-ring {
+          0% {
+            transform: scale(1);
+            opacity: 0.8;
+            border-color: rgba(30, 64, 175, 0.5);
+          }
+          100% {
+            transform: scale(1.8);
+            opacity: 0;
+            border-color: rgba(30, 64, 175, 0.1);
+          }
+        }
+
+        .step-content-container {
+          max-width: 480px;
+          position: relative;
+          margin: 0;
+        }
+
+        .roadmap-step:nth-child(odd) .step-content-container {
+          margin-right: auto;
+          padding-right: 0;
+        }
+
+        .roadmap-step:nth-child(even) .step-content-container {
+          margin-left: auto;
+          padding-left: 0;
+        }
+
+        .step-content-card {
+          background: rgba(255, 255, 255, 0.95);
+          backdrop-filter: blur(25px);
+          border: 2px solid rgba(30, 64, 175, 0.15);
+          border-radius: 20px;
+          padding: 2.8rem;
+          position: relative;
+          overflow: hidden;
+          transition: all 1s cubic-bezier(0.4, 0, 0.2, 1);
+          transform: translateY(40px);
+          box-shadow: 0 15px 35px rgba(30, 64, 175, 0.08);
+        }
+
+        .roadmap-step.active .step-content-card {
+          border-color: rgba(30, 64, 175, 0.4);
+          background: rgba(255, 255, 255, 0.98);
+          transform: translateY(0);
+          box-shadow:
+            0 30px 60px rgba(30, 64, 175, 0.12),
+            0 0 0 1px rgba(30, 64, 175, 0.1),
+            inset 0 1px 0 rgba(255, 255, 255, 0.8);
+        }
+
+        .roadmap-step.completed .step-content-card {
+          border-color: rgba(5, 150, 105, 0.3);
+          transform: translateY(0);
+          box-shadow:
+            0 25px 50px rgba(5, 150, 105, 0.08),
+            0 0 0 1px rgba(5, 150, 105, 0.1);
+        }
+
+        .step-content-card::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 3px;
+          background: linear-gradient(90deg, transparent, rgba(30, 64, 175, 0.6), transparent);
+          opacity: 0;
+          transition: opacity 1s ease;
+        }
+
+        .roadmap-step.active .step-content-card::before {
+          opacity: 1;
+        }
+
+        .step-number {
+          font-size: 1.1rem;
+          font-weight: 700;
+          color: #1e40af;
+          margin-bottom: 1rem;
+          opacity: 0.8;
+          letter-spacing: 0.8px;
+          font-family: 'Georgia', serif;
+          text-transform: uppercase;
+        }
+
+        .roadmap-step.active .step-number {
+          opacity: 1;
+          animation: legal-number-glow 3s ease-in-out infinite;
+        }
+
+        @keyframes legal-number-glow {
+          0%, 100% {
+            opacity: 1;
+            text-shadow: 0 0 15px rgba(30, 64, 175, 0.4);
+          }
+          50% {
+            opacity: 1;
+            text-shadow: 0 0 25px rgba(30, 64, 175, 0.7);
+          }
+        }
+
+        .step-title {
+          font-size: 2rem;
+          font-weight: 700;
+          margin-bottom: 1.5rem;
+          background: linear-gradient(135deg, #374151, #1f2937);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          transition: all 1s ease;
+          line-height: 1.3;
+          font-family: 'Georgia', serif;
+        }
+
+        .roadmap-step.active .step-title {
+          background: linear-gradient(135deg, #1e40af, #059669, #d97706);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          animation: legal-title-glow 3.5s ease-in-out infinite;
+        }
+
+        .roadmap-step.completed .step-title {
+          background: linear-gradient(135deg, #059669, #d97706);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
         }
 
-        .card-description {
-          color: #cbd5e1;
-          line-height: 1.7;
-          font-size: 1rem;
+        @keyframes legal-title-glow {
+          0%, 100% {
+            filter: drop-shadow(0 0 8px rgba(30, 64, 175, 0.2));
+          }
+          50% {
+            filter: drop-shadow(0 0 20px rgba(30, 64, 175, 0.4));
+          }
         }
 
-        .error {
-          background: rgba(239, 68, 68, 0.1);
-          border: 1px solid rgba(239, 68, 68, 0.3);
-          color: #ef4444;
-          padding: 1rem 2rem;
-          border-radius: 12px;
-          font-weight: 500;
-          text-align: center;
-          backdrop-filter: blur(10px);
+        .step-description {
+          color: #4b5563;
+          line-height: 1.8;
+          font-size: 1.15rem;
+          margin-bottom: 1.8rem;
+          transition: color 1s ease;
+          font-family: 'Georgia', serif;
+        }
+
+        .roadmap-step.active .step-description {
+          color: #374151;
+        }
+
+        .step-progress-bar {
+          width: 100%;
+          height: 5px;
+          background: rgba(30, 64, 175, 0.1);
+          border-radius: 4px;
+          overflow: hidden;
+          position: relative;
+        }
+
+        .step-progress-fill {
+          height: 100%;
+          background: linear-gradient(90deg, #1e40af, #059669, #d97706);
+          border-radius: 4px;
+          width: 0%;
+          transition: width 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+          position: relative;
+          overflow: hidden;
+        }
+
+        .step-progress-fill::after {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+          transition: left 1s ease;
+        }
+
+        .roadmap-step.active .step-progress-fill {
+          width: 100%;
+          box-shadow: 0 0 20px rgba(30, 64, 175, 0.4);
+        }
+
+        .roadmap-step.active .step-progress-fill::after {
+          left: 100%;
+          animation: legal-progress-shimmer 2.5s ease-in-out infinite;
+        }
+
+        .roadmap-step.completed .step-progress-fill {
+          width: 100%;
+          background: linear-gradient(90deg, #059669, #d97706);
+          box-shadow: 0 0 15px rgba(5, 150, 105, 0.3);
+        }
+
+        @keyframes legal-progress-shimmer {
+          0% { left: -100%; }
+          100% { left: 100%; }
         }
 
         @keyframes fadeInUp {
@@ -718,69 +1320,105 @@ function PatentAssistant() {
           }
         }
 
-        /* Responsive Design */
+        @media (max-width: 1024px) {
+          .roadmap-container {
+            max-width: 900px;
+          }
+
+          .step-content-container {
+            max-width: 420px;
+          }
+        }
+
         @media (max-width: 768px) {
           .container {
             padding: 1rem;
-            justify-content: center;
-            align-items: center;
-          }
-
-          .main-content {
-            width: 100%;
-            max-width: 100%;
           }
 
           .title {
+            font-size: 2.8rem;
+          }
+
+          .roadmap-section {
+            padding: 2rem 1rem;
+          }
+
+          .roadmap-title {
             font-size: 2.5rem;
+          }
+
+          .roadmap-container {
+            max-width: 100%;
+          }
+
+          .roadmap-step {
+            flex-direction: column;
+            margin: 0 auto !important;
+            max-width: 90%;
+            justify-content: center !important;
+          }
+
+          .step-timeline {
+            position: relative;
+            margin-bottom: 1rem;
+          }
+
+          .step-content-container {
+            max-width: 100%;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+
+          .step-content-card {
+            padding: 2.2rem;
+            transform: translateY(30px) !important;
+          }
+
+          .roadmap-step.active .step-content-card,
+          .roadmap-step.completed .step-content-card {
+            transform: translateY(0) !important;
+          }
+
+          .roadmap-timeline {
+            display: none;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .title {
+            font-size: 2.2rem;
           }
 
           .input-section {
             padding: 2rem;
           }
 
-          .progress-steps {
-            flex-direction: column;
-            gap: 1rem;
+          .roadmap-section {
+            padding: 1rem 0.5rem;
           }
 
-          .progress-steps::before {
-            display: none;
-          }
-
-          .centered-response-card {
-            max-width: 95%;
-          }
-
-          .feature-badges {
-            flex-direction: column;
-            align-items: center;
-          }
-        }
-
-        @media (max-width: 480px) {
-          .container {
-            padding: 0.5rem;
-          }
-
-          .title {
+          .roadmap-title {
             font-size: 2rem;
           }
 
-          .input-section {
-            padding: 1.5rem;
+          .step-content-card {
+            padding: 1.8rem;
           }
 
-          .centered-response-card {
-            padding: 1.5rem;
+          .step-title {
+            font-size: 1.6rem;
+          }
+
+          .step-description {
+            font-size: 1rem;
           }
         }
       `}</style>
 
       <div className="container">
         <div className="particles-bg">
-          {[...Array(20)].map((_, i) => (
-            <Particle key={i} delay={i * 0.5} />
+          {[...Array(15)].map((_, i) => (
+            <LegalDocument key={i} delay={i * 0.8} />
           ))}
         </div>
 
@@ -789,31 +1427,27 @@ function PatentAssistant() {
             <div className="title-container">
               <h1 className="title">Patent Forge AI</h1>
             </div>
-            <p className="subtitle">Transform groundbreaking ideas into protected intellectual property</p>
+            <p className="subtitle">Professional Intellectual Property Protection Services</p>
             <div className="feature-badges">
-              <div className="badge">🧠 AI-Powered Analysis</div>
-              <div className="badge">🔍 Prior Art Research</div>
-              <div className="badge">⚡ Instant Claims Generation</div>
+              <div className="badge">⚖️ Legal Expertise</div>
+              <div className="badge">📚 Comprehensive Research</div>
+              <div className="badge">🏛️ Professional Documentation</div>
             </div>
           </div>
 
           <div className="input-section">
             <label className="input-label">
-              <Lightbulb className="w-5 h-5" />
-              Describe Your Revolutionary Innovation
+              <Lightbulb className="w-6 h-6" />
+              Describe Your Innovation for Patent Analysis
             </label>
             <textarea
               className="idea-textarea"
               value={idea}
               onChange={(e) => setIdea(e.target.value)}
-              placeholder="Describe your breakthrough innovation in detail... What problem does it solve? How does it work? What makes it uniquely different from existing solutions?"
+              placeholder="Provide a detailed description of your invention, including its technical specifications, unique features, and the problem it solves. This information will be used to conduct a comprehensive patent analysis and prepare your application."
             />
-            <button
-              className="submit-button"
-              onClick={handleSubmit}
-              disabled={loading || !idea.trim()}
-            >
-              {loading ? 'AI Agents Processing...' : 'Launch Patent Analysis'}
+            <button className="submit-button" onClick={handleSubmit} disabled={loading || !idea.trim()}>
+              {loading ? "Processing Legal Analysis..." : "Initiate Patent Process"}
             </button>
           </div>
 
@@ -833,21 +1467,23 @@ function PatentAssistant() {
               <div className="loading-status">
                 {currentStep > 0 && currentStep <= steps.length
                   ? `${steps[currentStep - 1].name}...`
-                  : 'Initializing AI Agents...'}
+                  : "Initializing Legal Analysis..."}
               </div>
             </div>
           )}
 
           {error && <div className="error">{error}</div>}
 
-          {stepResults.length > 0 && (
+          {stepResults.length > 0 && typingComplete && (
             <div className="chat-container">
               {stepResults.map((step, index) => {
                 const agentKey = Object.keys(step)[0];
                 const contentObj = step[agentKey];
                 const contentKey = Object.keys(contentObj)[0];
                 const contentValue = contentObj[contentKey];
-                const agentName = agentNames[steps.indexOf(steps.find(s => s.name.toLowerCase().includes(agentKey.toLowerCase())))] || formatTitle(agentKey);
+                const agentName =
+                  agentNames[steps.findIndex((s) => s.name.toLowerCase().includes(agentKey.toLowerCase()))] ||
+                  formatTitle(agentKey);
 
                 return (
                   <CenteredResponseCard
@@ -861,18 +1497,15 @@ function PatentAssistant() {
           )}
 
           <div className="why-choose-us-section">
-            <h2 className="why-choose-us-title">Why Choose Us?</h2>
+            <h2 className="why-choose-us-title">Why Choose Our Service?</h2>
             <div className="why-choose-us-cards">
               {whyChooseUsData.map((item, index) => (
-                <WhyChooseUsCard
-                  key={index}
-                  title={item.title}
-                  description={item.description}
-                  icon={item.icon}
-                />
+                <WhyChooseUsCard key={index} title={item.title} description={item.description} icon={item.icon} />
               ))}
             </div>
           </div>
+
+          <HowItWorksSection />
         </div>
       </div>
     </>

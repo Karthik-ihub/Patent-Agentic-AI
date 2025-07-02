@@ -133,7 +133,7 @@ def patent_filer(state: AgentState) -> AgentState:
     filings_collection.insert_one(filing_info)
 
     return {
-        "filing_status": "Patent submitted successfully to mock system ✅",
+        "filing_status": "Patent submitted successfully to mock system",
         "filing_id": filing_id,
         "pdf_path": pdf_path
     }
